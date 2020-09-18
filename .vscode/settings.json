@@ -1,0 +1,7 @@
+{
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	"editor.formatOnSave": true,
+	"editor.codeActionsOnSave": ["source.organizeImports", "source.fixAll"],
+	"editor.rulers": [80],
+	"typescript.tsdk": "node_modules\\typescript\\lib"
+}

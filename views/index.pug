@@ -1,0 +1,105 @@
+doctype
+html
+	head
+		meta(charset='UTF-8')
+		meta(http-equiv='X-UA-Compatible' content='IE=edge')
+		meta(name='viewport' content='width=device-width, initial-scale=1')
+		link(rel='stylesheet' href='/css/bootstrap.css')
+		script(type='application/javascript' src='/js/jquery.js')
+		script(type='application/javascript' src='/js/bootstrap.js')
+		script(type='application/javascript' src='/js/calendar.js')
+		title Holidays
+		style.
+			.red {
+				color: white;
+				background-color: red;
+			}
+			.green {
+				color: white;
+				background-color: green;
+			}
+	body
+		div
+			p= 'Hello' + (user ? (' ' + user.name) : '')
+			if user
+				a(href='/logout')
+					button Logout
+				if user.role == roles.Manager
+					h3.display-3 Manage shifts
+					.container
+						.row
+							if workers
+								.col
+									for worker in workers
+										label(for='worker_' + worker.id style='display: block')
+											.input-group-text
+												input.worker(id='worker_' + worker.id type='checkbox' value=worker.id)
+												span= worker.name
+								.col
+									.timetable-container.container-md
+									script(type='application/javascript').
+										document.querySelector('.timetable-container').appendChild(timetable(TimetableTypes.Shift, daysOfWeek.map(x => ({
+											dow: x,
+											dom: '01',
+											date: new Date()
+										}))));
+									button.btn.btn-lg.btn-primary.btn-block.timetable-shifts-save Save
+									.timetable-shifts-result
+									script(type='application/javascript').
+										const saveButton = document.querySelector('.timetable-shifts-save');
+										const saveResult = document.querySelector('.timetable-shifts-result');
+										saveButton.addEventListener('click', e => {
+											fetch('/save/shifts', {
+												method: 'POST',
+												headers: {
+													'Content-Type': 'application/json'
+												},
+												body: JSON.stringify({
+													workers: [ ...document.querySelectorAll('.worker') ].flatMap(x => x.checked ? [ x.id ] : []),
+													shifts
+												})
+											}).then(res => res.json())
+											.then(data => {
+												saveResult.textContent = data;
+											});
+										});
+				h3.display-3 Set your holidays
+				.container
+					.row
+						.col
+							.calendartable(data-index='01')
+						.col
+							.calendartable(data-index='02')
+						.col
+							.calendartable(data-index='03')
+						.col
+							.calendartable(data-index='04')
+						.col
+							.calendartable(data-index='05')
+						.col
+							.calendartable(data-index='06')
+						.col
+							.calendartable(data-index='07')
+						.col
+							.calendartable(data-index='08')
+						.col
+							.calendartable(data-index='09')
+						.col
+							.calendartable(data-index='10')
+						.col
+							.calendartable(data-index='11')
+						.col
+							.calendartable(data-index='12')
+					script(type='application/javascript').
+						document.querySelectorAll('.calendartable').forEach(el => {
+							el.innerHTML = '';
+							const index = el.getAttribute('data-index');
+							el.appendChild(calendarTable(
+								monthsOfYear[Number(index) - 1],
+								getCalendar(index)
+							));
+						});
+						fillCalendar(dates);
+			else
+				a(href='/login')
+					button Login
