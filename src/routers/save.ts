@@ -3,6 +3,7 @@ import { getSessionToken } from '.';
 import { holidayManager } from '../logic/holiday';
 import { loginManager } from '../logic/login';
 import { shiftManager } from '../logic/shift';
+import { User } from '../tables';
 import { Roles } from '../tables/enums';
 import cookieParser = require('cookie-parser');
 
@@ -61,22 +62,44 @@ export const save = (
 				return res.status(400).json('Request is not a shifts object');
 			}
 			const { workers, shifts } = req.body;
-			await Promise.all(
-				shifts.map(async (x, i) => {
-					console.log(user);
-					const managedWorkers = (
-						await shift.getManagedWorkers(user)
-					).filter(worker =>
-						workers.some(x => Number(x.split('_')[1]) === worker.id)
-					);
-					return Promise.all(
-						managedWorkers.map(worker =>
-							shift.setWorkingHours(worker, i, x)
-						)
-					);
-				})
-			);
+			for (let i = 0; i < shifts.length; i++) {
+				const x = shifts[i];
+				const managedWorkers = (
+					await shift.getManagedWorkers(user)
+				).filter(worker =>
+					workers.some(x => Number(x.split('_')[1]) === worker.id)
+				);
+				for (const worker of managedWorkers) {
+					await shift.setWorkingHours(worker, i, x);
+				}
+			}
 			return res.json('OK');
+		} catch (err) {
+			return res.status(500).json((err as Error).message);
+		}
+	});
+
+	app.post('/getShifts', cookieParser(), json(), async (req, res) => {
+		const token = getSessionToken(req);
+		if (!token) {
+			return res.status(400).json('Not signed in');
+		}
+		try {
+			const user = await login.loggedInAs(token);
+			if (!user) {
+				return res.status(400).json('Not signed in');
+			}
+			if (user.role !== Roles.Manager) {
+				return res.status(400).json('You are not a manager');
+			}
+			res.json(
+				await shift.getWorkingHours(
+					user.company,
+					Object.keys(req.body).length > 0
+						? (req.body as User)
+						: undefined
+				)
+			);
 		} catch (err) {
 			return res.status(500).json((err as Error).message);
 		}
@@ -113,13 +136,11 @@ export const save = (
 
 	app.post('/getHolidays', cookieParser(), json(), async (req, res) => {
 		const token = getSessionToken(req);
-		console.log(token);
 		if (!token) {
 			return res.status(400).json('Not signed in');
 		}
 		try {
 			const user = await login.loggedInAs(token);
-			console.log(user);
 			if (!user) {
 				return res.status(400).json('Not signed in');
 			}

@@ -1,5 +1,5 @@
 import type { Repository } from 'typeorm';
-import type { Shift, User } from '../tables';
+import type { Company, Shift, User } from '../tables';
 import { Roles } from '../tables/enums';
 
 export type shiftManager = {
@@ -8,6 +8,7 @@ export type shiftManager = {
 		dayOfWeek: number,
 		hours: number[]
 	) => Promise<void>;
+	getWorkingHours: (company: Company, worker?: User) => Promise<Shift[]>;
 	getManagedWorkers: (user: User) => Promise<User[]>;
 };
 
@@ -20,6 +21,21 @@ export const ShiftManager = (
 			await repo.save({ user, dayOfWeek, hours: hours.join(',') });
 		} catch {
 			await repo.update({ dayOfWeek, user }, { hours: hours.join(',') });
+		}
+	},
+	getWorkingHours: async (company, worker) => {
+		console.log(company, worker);
+		if (worker) {
+			const shifts = await repo.find({ where: { user: worker } });
+			return shifts;
+		} else {
+			const users = await userRepo.find({ where: { company } });
+			const shifts = (
+				await Promise.all(
+					users.map(user => repo.find({ where: { user } }))
+				)
+			).flat();
+			return shifts;
 		}
 	},
 	getManagedWorkers: async user => {

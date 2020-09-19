@@ -148,6 +148,39 @@ const calendarTable = (month, calendar) => {
 	return table;
 };
 
+const fillShifts = async id => {
+	const res = await fetch('/save/getShifts', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({ id })
+	});
+	if (res.status !== 200) {
+		alert(await res.text());
+	}
+	const data = await res.json();
+	data.forEach(shift => {
+		const timetable = document.querySelector('.timetable tbody');
+		const hours = shift.hours.split(',');
+		hours
+			.filter(x => x.length > 0)
+			.forEach(hour => {
+				const row = timetable.children[Number(shift.dayOfWeek)];
+				const col = row.children[Number(hour) + 1];
+				col.classList.add('red');
+				const i = Number(shift.dayOfWeek);
+				if (i === -1) {
+					return;
+				}
+				shifts[i] = [...row.children]
+					.slice(1)
+					.map((x, i) => (x.classList.contains('red') ? i : false))
+					.filter(x => x !== false);
+			});
+	});
+};
+
 const fillCalendar = async dates => {
 	const res = await fetch('/save/getHolidays', {
 		method: 'POST',
@@ -156,7 +189,6 @@ const fillCalendar = async dates => {
 		},
 		body: JSON.stringify(Object.keys(dates))
 	});
-	console.log(res.status);
 	if (res.status !== 200) {
 		alert(await res.text());
 	}
@@ -219,7 +251,6 @@ const timetable = (type, week, el) => {
 		for (let i = 0; i < 24; i++) {
 			const td = document.createElement('td');
 			if (type === TimetableTypes.Shift) {
-				let working = false;
 				td.addEventListener('click', e => {
 					td.classList.toggle('red');
 					const i = daysOfWeek.findIndex(x => x === day.dow);

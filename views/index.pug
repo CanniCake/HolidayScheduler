@@ -30,11 +30,9 @@ html
 						.row
 							if workers
 								.col
-									for worker in workers
-										label(for='worker_' + worker.id style='display: block')
-											.input-group-text
-												input.worker(id='worker_' + worker.id type='checkbox' value=worker.id)
-												span= worker.name
+									select(name='worker' id='worker-select')
+										for worker in workers
+											option(value='worker_' + worker.id)= worker.name
 								.col
 									.timetable-container.container-md
 									script(type='application/javascript').
@@ -48,6 +46,7 @@ html
 									script(type='application/javascript').
 										const saveButton = document.querySelector('.timetable-shifts-save');
 										const saveResult = document.querySelector('.timetable-shifts-result');
+										fillShifts(document.querySelector('#worker-select').value.split('_')[1]);
 										saveButton.addEventListener('click', e => {
 											fetch('/save/shifts', {
 												method: 'POST',
@@ -55,7 +54,7 @@ html
 													'Content-Type': 'application/json'
 												},
 												body: JSON.stringify({
-													workers: [ ...document.querySelectorAll('.worker') ].flatMap(x => x.checked ? [ x.id ] : []),
+													workers: [ ...document.querySelector('#worker-select') ].flatMap(x => x.value),
 													shifts
 												})
 											}).then(res => res.json())

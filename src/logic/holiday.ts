@@ -8,6 +8,11 @@ export type holidayManager = {
 	findHolidays: (user: User, dates: string[]) => Promise<string[]>;
 };
 
+const partition = <T>(n: number, list: T[]): T[][] =>
+	list.length <= n
+		? [list]
+		: [list.slice(0, n), ...partition(n, list.slice(n))];
+
 export const HolidayManager = (
 	repo: Repository<Holiday>,
 	userRepo: Repository<User>
@@ -27,7 +32,6 @@ export const HolidayManager = (
 				})
 			)
 		);
-		console.log(coworkers, coworkerHolidays);
 		if (coworkerHolidays.every(x => x !== undefined)) {
 			// if all coworkers have holiday that day, fail
 			throw new Error(
